@@ -99,6 +99,8 @@ namespace Serilog.LogglyBulkSink
             {
                 foreach (var key in logEvent.Properties.Keys)
                 {
+                    int dummy;
+                    if (Int32.TryParse(key, out dummy)) continue;
                     var propertyValue = logEvent.Properties[key];
                     var simpleValue = SerilogPropertyFormatter.Simplify(propertyValue);
                     var safeKey = key.Replace(" ", "").Replace(":", "").Replace("-", "").Replace("_", "");
