@@ -16,10 +16,12 @@ namespace Serilog.LogglyBulkSink
         private readonly string _logglyUrl;
         public const string LogglyUriFormat = "https://logs-01.loggly.com/bulk/{0}/tag/{1}";
         public const double MaxBulkBytes = 4.5 * 1024 * 1024;
+        private readonly bool _includeDiagnostics;
 
-        public LogglySink(string logglyKey, string[] tags, int batchSizeLimit, TimeSpan period)
+        public LogglySink(string logglyKey, string[] tags, int batchSizeLimit, TimeSpan period, bool includeDiagnostics = false)
             : base(batchSizeLimit, period)
         {
+            _includeDiagnostics = includeDiagnostics;
             _logglyUrl = string.Format(LogglyUriFormat, logglyKey, string.Join(",", tags));
         }
 
@@ -72,10 +74,10 @@ namespace Serilog.LogglyBulkSink
                 chunk.Add(json);
             }
 
-            yield return PackageContent(chunk, bytes, page);
+            yield return PackageContent(chunk, bytes, page, _includeDiagnostics);
         }
 
-        public static StringContent PackageContent(List<string> jsons, int bytes, int page)
+        public static StringContent PackageContent(List<string> jsons, int bytes, int page, bool includeDiagnostics = false)
         {
             var diagnostic = JsonConvert.SerializeObject(new
             {
@@ -83,7 +85,7 @@ namespace Serilog.LogglyBulkSink
                 Trace = string.Format("EventCount={0}, ByteCount={1}, PageCount={2}", jsons.Count, bytes, page)
             });
             
-            jsons.Add(diagnostic);
+            if (includeDiagnostics) jsons.Add(diagnostic);
             return new StringContent(string.Join("\n", jsons), Encoding.UTF8, "application/json");
         }
 

@@ -42,10 +42,14 @@ namespace Serilog.LogglyBulkSink.Tests
                 "{'fruit': 'banana'}",
             }.ToList();
 
-            var stringContent = LogglySink.PackageContent(jsons, Encoding.UTF8.GetByteCount(string.Join("\n", jsons)), 0);
+            var noDiagContent = LogglySink.PackageContent(jsons, Encoding.UTF8.GetByteCount(string.Join("\n", jsons)), 0, false);
+            var stringContent = LogglySink.PackageContent(jsons, Encoding.UTF8.GetByteCount(string.Join("\n", jsons)), 0, true);
             stringContent.Should().NotBeNull();
+            noDiagContent.Should().NotBeNull();
             var result = stringContent.ReadAsStringAsync().GetAwaiter().GetResult();
+            var resultNoDiag = noDiagContent.ReadAsStringAsync().GetAwaiter().GetResult();
             result.Split('\n').Count().Should().Be(4);
+            resultNoDiag.Split('\n').Count().Should().Be(3);
         }
 
         [TestMethod]
