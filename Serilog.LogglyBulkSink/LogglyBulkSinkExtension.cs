@@ -2,7 +2,7 @@
 using Serilog.Configuration;
 using Serilog.Events;
 
-namespace Serilog.LogglyBulkSink.cs
+namespace Serilog.LogglyBulkSink
 {
     public static class LogglyBulkSinkExtension
     {
@@ -15,6 +15,7 @@ namespace Serilog.LogglyBulkSink.cs
         /// <param name="restrictedToMinLevel">Minimum Log Level to Restrict to </param>
         /// <param name="batchPostingLimit">Batch Posting Limit, defaults to 1000</param>
         /// <param name="period">Frequency of Periodic Batch Sink auto flushing</param>
+        /// <param name="includeDiagnostics">Whether or not to send the Loggly Diagnostics Event</param>
         /// <returns>Original Log Sink Configuration now updated</returns>
         /// <remarks>Depending on your aveage log event size, a batch positing limit on the order of 10000 could be reasonable</remarks>
         public static LoggerConfiguration LogglyBulk(this LoggerSinkConfiguration lc, 
@@ -22,13 +23,14 @@ namespace Serilog.LogglyBulkSink.cs
             string[] logglyTags,
             LogEventLevel restrictedToMinLevel = LogEventLevel.Verbose,
             int batchPostingLimit = 1000,
-            TimeSpan? period = null)
+            TimeSpan? period = null,
+            bool includeDiagnostics = false)
         {
             if (lc == null) throw new ArgumentNullException("lc");
 
             var frequency = period ?? TimeSpan.FromSeconds(30);
 
-            return lc.Sink(new LogglySink(logglyKey, logglyTags, batchPostingLimit, frequency), restrictedToMinLevel);
+            return lc.Sink(new LogglySink(logglyKey, logglyTags, batchPostingLimit, frequency, includeDiagnostics), restrictedToMinLevel);
         }
     }
 }
