@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Serilog.Events;
 using Serilog.Parsing;
 
 namespace Serilog.LogglyBulkSink.Tests
 {
     [TestClass]
-    public class SerilogSinkTests
+    public class SerilogLogglyBulkSinkTests
     {
         [TestMethod]
         public void TestAddIfContains()
@@ -68,6 +66,47 @@ namespace Serilog.LogglyBulkSink.Tests
             bool hasZero = (json["0"] == null);
             hasZero.Should().Be(true);
             (json["key"].Value as string).Should().Be("value");
+        }
+
+        [TestMethod]
+        public void IncludeDiagnostics_WhenEnabled_IncludesDiagnosticsEvent()
+        {
+            var logEvent = new LogEvent(DateTimeOffset.UtcNow,
+                LogEventLevel.Debug, null, new MessageTemplate(Enumerable.Empty<MessageTemplateToken>()), new[]
+                {
+                    new LogEventProperty("Field1", new ScalarValue("Value1")),
+                });
+            var result = new List<string>{LogglySink.EventToJson(logEvent)};
+
+            var package = LogglySink.PackageContent(result, 1024, 5, true);
+
+            var packageStringTask = package.ReadAsStringAsync();
+            packageStringTask.Wait();
+            var packageString = packageStringTask.Result;
+
+            Assert.IsTrue(result.Count == 2);
+            Assert.IsTrue(result[1].Contains("LogglyDiagnostics"));
+            Assert.IsTrue(packageString.Contains("LogglyDiagnostics"));
+        }
+
+        [TestMethod]
+        public void IncludeDiagnostics_WhenEnabled_DoesNotIncludeDiagnosticsEvent()
+        {
+            var logEvent = new LogEvent(DateTimeOffset.UtcNow,
+                LogEventLevel.Debug, null, new MessageTemplate(Enumerable.Empty<MessageTemplateToken>()), new[]
+                {
+                    new LogEventProperty("Field1", new ScalarValue("Value1")),
+                });
+            var result = new List<string> { LogglySink.EventToJson(logEvent) };
+
+            var package = LogglySink.PackageContent(result, 1024, 5);
+
+            var packageStringTask = package.ReadAsStringAsync();
+            packageStringTask.Wait();
+            var packageString = packageStringTask.Result;
+
+            Assert.IsTrue(result.Count == 1);
+            Assert.IsTrue(!packageString.Contains("LogglyDiagnostics"));
         }
     }
 }

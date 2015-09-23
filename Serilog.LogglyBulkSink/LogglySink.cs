@@ -79,13 +79,16 @@ namespace Serilog.LogglyBulkSink
 
         public static StringContent PackageContent(List<string> jsons, int bytes, int page, bool includeDiagnostics = false)
         {
-            var diagnostic = JsonConvert.SerializeObject(new
+            if (includeDiagnostics)
             {
-                Event = "LogglyDiagnostics",
-                Trace = string.Format("EventCount={0}, ByteCount={1}, PageCount={2}", jsons.Count, bytes, page)
-            });
+                var diagnostic = JsonConvert.SerializeObject(new
+                {
+                    Event = "LogglyDiagnostics",
+                    Trace = string.Format("EventCount={0}, ByteCount={1}, PageCount={2}", jsons.Count, bytes, page)
+                });
+                jsons.Add(diagnostic);
+            }
             
-            if (includeDiagnostics) jsons.Add(diagnostic);
             return new StringContent(string.Join("\n", jsons), Encoding.UTF8, "application/json");
         }
 
